@@ -8,6 +8,13 @@ namespace PassBase\Entity;
  */
 interface PasswordGroupUserKey
 {
+
+    /**
+     * Returns the PasswordGroup that this key belongs to
+     * @return PasswordGroup
+     */
+    public function getPasswordGroup();
+
     /**
      * Returns the encrypted key for all the passwords in the group.
      * This should be encrypted by the User's plaintext password
