@@ -1,0 +1,16 @@
+{
+    "name": "bencoder/passbaselib",
+    "authors": [
+        {
+            "name": "Ben Clark",
+            "email": "bencoder@googlemail.com"
+        }
+    ],
+    "require": {
+        "phpunit/phpunit": "3.7.*@dev",
+        "mockery/mockery": "0.9.*@dev"
+    },
+    "autoload": {
+        "psr-0": { "PassBase":"src/" }
+    }
+}
