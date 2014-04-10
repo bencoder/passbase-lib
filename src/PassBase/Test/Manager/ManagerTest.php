@@ -30,6 +30,38 @@ class ManagerTest extends \PHPUnit_Framework_TestCase
         $this->manager->initialisePasswordGroup($group, $user, $userPassword);
     }
 
+    public function testAssignUserToGroup()
+    {
+        $sourceUser = M::mock('\PassBase\Entity\User');
+        $sourcePassword = 'source_password';
+        $targetUser = M::mock('\PassBase\Entity\User');
+        $targetPassword = 'target_password';
+        $group = M::mock('\PassBase\Entity\PasswordGroup');
+
+        $encryptedKey = 'encrypted_key';
+        $decryptedKey = 'decrypted_key';
+        $encryptedKey2 = 'encrypted_key_2';
+
+        $key = M::mock('\PassBase\Entity\PasswordGroupUserKey');
+        $key->shouldReceive('getKey')->andReturn($encryptedKey);
+
+        $this->keyStorage->shouldReceive('getKeyForUserAndGroup')->with($sourceUser, $group)->andReturn($key);
+
+        $this->encoder->shouldReceive('decode')->with($sourcePassword, $encryptedKey)->andReturn($decryptedKey);
+
+        $this->encoder->shouldReceive('encode')->with($targetPassword, $decryptedKey)->andReturn($encryptedKey2);
+
+        $this->keyStorage->shouldReceive('createKeyForUserAndGroup')->with($targetUser, $group, $encryptedKey2)->once();
+
+        $this->manager->assignUserToGroup(
+            $sourceUser,
+            $sourcePassword,
+            $targetUser,
+            $targetPassword,
+            $group
+        );
+    }
+
 
     public function testGetPasswordsForUser()
     {
