@@ -19,6 +19,18 @@ class ManagerTest extends \PHPUnit_Framework_TestCase
             $this->passwordStorage
         );
     }
+
+    public function testInitialisePasswordGroup()
+    {
+        $group = M::mock('\PassBase\Entity\PasswordGroup');
+        $user = M::mock('\PassBase\Entity\User');
+        $userPassword = 'userPassword';
+        $this->encoder->shouldReceive('encode')->with($userPassword, M::any())->once();
+        $this->keyStorage->shouldReceive('createKeyForUserAndGroup')->with($user, $group, M::any())->once();
+        $this->manager->initialisePasswordGroup($group, $user, $userPassword);
+    }
+
+
     public function testGetPasswordsForUser()
     {
         $encryptedKey = 'encryptedKey';
@@ -68,7 +80,7 @@ class ManagerTest extends \PHPUnit_Framework_TestCase
         $decryptedKey = "decryptedKey";
         $serializedPassword = "serializedPassword";
         $encryptedPassword = "encryptedPassword";
-        
+
         $user = M::mock('\PassBase\Entity\User');
         $passwordGroup = M::mock('\PassBase\Entity\PasswordGroup');
         $decryptedPassword = M::mock('\PassBase\Entity\DecryptedPassword');

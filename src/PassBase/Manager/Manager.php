@@ -1,34 +1,43 @@
 <?php
 namespace PassBase\Manager;
 
+use PassBase\Encoder\Encoder;
+use PassBase\Entity\DecryptedPassword;
+use PassBase\Entity\Password;
+use PassBase\Entity\PasswordGroup;
+use PassBase\Entity\Serializer\DecryptedPasswordSerializer;
+use PassBase\Entity\User;
+use PassBase\Storage\PasswordGroupUserKeyStorage;
+use PassBase\Storage\PasswordStorage;
+
 /**
- * Class to handle retrieving, Creating and updating passwords
+ * Class to handle Retrieving, Creating and Updating passwords and assigning users to groups
  */
 class Manager
 {
-    /** @var \PassBase\Entity\Serializer\DecryptedPasswordSerializer */
+    /** @var DecryptedPasswordSerializer */
     private $serializer;
 
-    /** @var \PassBase\Encoder\Encoder */
+    /** @var Encoder */
     private $encoder;
 
-    /** @var \PassBase\Storage\PasswordGroupUserKeyStorage */
+    /** @var PasswordGroupUserKeyStorage */
     private $passwordGroupUserKeyStorage;
 
-    /** @var \PassBase\Storage\PasswordStorage */
+    /** @var PasswordStorage */
     private $passwordStorage;
 
     /**
-     * @param \PassBase\Entity\Serializer\DecryptedPasswordSerializer $serializer,
-     * @param \PassBase\Encoder\Encoder $encoder,
-     * @param \PassBase\Storage\PasswordGroupUserKeyStorage $passwordGroupUserKeyStorage,
-     * @param \PassBase\Storage\PasswordStorage $passwordStorage
+     * @param DecryptedPasswordSerializer $serializer,
+     * @param Encoder $encoder,
+     * @param PasswordGroupUserKeyStorage $passwordGroupUserKeyStorage,
+     * @param PasswordStorage $passwordStorage
      */
     public function __construct(
-        \PassBase\Entity\Serializer\DecryptedPasswordSerializer $serializer,
-        \PassBase\Encoder\Encoder $encoder,
-        \PassBase\Storage\PasswordGroupUserKeyStorage $passwordGroupUserKeyStorage,
-        \PassBase\Storage\PasswordStorage $passwordStorage
+        DecryptedPasswordSerializer $serializer,
+        Encoder $encoder,
+        PasswordGroupUserKeyStorage $passwordGroupUserKeyStorage,
+        PasswordStorage $passwordStorage
     ) {
         $this->encoder = $encoder;
         $this->serializer = $serializer;
@@ -37,13 +46,52 @@ class Manager
     }
 
     /**
+     * Creates the first password for the password group by generating a random key for the group,
+     * encrypting it with the User's password and storing it
+     *
+     * @param PasswordGroup $group
+     * @param User $user
+     * @param string $userPassword
+     */
+    public function initialisePasswordGroup(PasswordGroup $group, User $user, $userPassword)
+    {
+        $unencryptedKey = openssl_random_pseudo_bytes(32);
+        $encryptedKey = $this->encoder->encode($userPassword, $unencryptedKey);
+        $this->passwordGroupUserKeyStorage->createKeyForUserAndGroup($user, $group, $encryptedKey);
+    }
+
+    /**
+     * Allows the $targetUser to access the passwords stored in $group
+     * Works by decrypting the group key using the sourcePassword, and re-encrypting
+     * it using the targetPassword
+     *
+     * @param User $sourceUser A user who has access to the group
+     * @param string $sourcePassword The password for the source user
+     * @param User $targetUser The user to add to the group
+     * @param string $taretPassword The password of the target user
+     * @param PasswordGroup $group The group
+     */
+    public function assignUserToGroup(
+            User $sourceUser,
+            $sourcePassword,
+            User $targetUser,
+            $targetPassword,
+            PasswordGroup $group
+    ) {
+        $sourceKey = $this->passwordGroupUserKeyStorage->getKeyForUserAndGroup($sourceUser, $group);
+        $decryptedKey = $this->encoder->decode($sourcePassword, $sourceKey->getKey());
+        $encryptedKey = $this->encoder->encode($targetPassword, $decryptedKey);
+        $this->passwordGroupUserKeyStorage->createKeyForUserAndGroup($targetUser, $group, $encryptedKey);
+    }
+
+    /**
      * Returns all the DecryptedPassword objects for the given user
-     * @param \PassBase\Entity\User
+     * @param User
      * @param string The unhashed password. Required for decrypting
      *
-     * @return \PassBase\Entity\DecryptedPassword[] indexed by the ID of the password
+     * @return DecryptedPassword[] indexed by the ID of the password
      */
-    public function getPasswordsForUser($user, $password)
+    public function getPasswordsForUser(User $user, $password)
     {
         $results = [];
         foreach($user->getKeys() as $key) {
@@ -61,15 +109,15 @@ class Manager
     /**
      * Saves a new password using the Password Storage
      *
-     * @param \PassBase\Entity\User $user
-     * @param \PassBase\Entity\PasswordGroup $passwordGroup
-     * @param \PassBase\Entity\DecryptedPassword $decryptedPassword
+     * @param User $user
+     * @param PasswordGroup $passwordGroup
+     * @param DecryptedPassword $decryptedPassword
      * @param string $userPassword
      */
     public function createPassword(
-        \PassBase\Entity\User $user,
-        \PassBase\Entity\PasswordGroup $passwordGroup,
-        \PassBase\Entity\DecryptedPassword $decryptedPassword,
+        User $user,
+        PasswordGroup $passwordGroup,
+        DecryptedPassword $decryptedPassword,
         $userPassword
     ) {
         $key = $this->passwordGroupUserKeyStorage->getKeyForUserAndGroup($user, $passwordGroup);
@@ -82,15 +130,15 @@ class Manager
     /**
      * Updates a password using the Password Storage
      *
-     * @param \PassBase\Entity\User $user
-     * @param \PassBase\Entity\Password $password
-     * @param \PassBase\Entity\DecryptedPassword $decryptedPassword
+     * @param User $user
+     * @param Password $password
+     * @param DecryptedPassword $decryptedPassword
      * @param string $userPassword
      */
     public function updatePassword(
-        \PassBase\Entity\User $user,
-        \PassBase\Entity\Password $password,
-        \PassBase\Entity\DecryptedPassword $decryptedPassword,
+        User $user,
+        Password $password,
+        DecryptedPassword $decryptedPassword,
         $userPassword
     ) {
         $key = $this->passwordGroupUserKeyStorage->getKeyForUserAndGroup(
