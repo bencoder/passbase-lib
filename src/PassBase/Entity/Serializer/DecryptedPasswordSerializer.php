@@ -1,6 +1,8 @@
 <?php
 namespace PassBase\Entity\Serializer;
 
+use PassBase\Entity\DecryptedPassword;
+
 /**
  * Class to serialize/deserialize a DecryptedPassword object
  * If the format changes this class needs to handle backwards compatibility
@@ -8,16 +10,16 @@ namespace PassBase\Entity\Serializer;
 interface DecryptedPasswordSerializer
 {
     /**
-     * @param \PassBase\Entity\DecryptedPassword $password
+     * @param DecryptedPassword $password
      *
      * @return string the serialized data
      */
-    public function serializePassword(\PassBase\Entity\DecryptedPassword $password);
+    public function serializePassword(DecryptedPassword $password);
 
     /**
      * @param string
      *
-     * @return \PassBase\Entity\DecryptedPassword
+     * @return DecryptedPassword
      */
     public function deserializePassword($data);
 }

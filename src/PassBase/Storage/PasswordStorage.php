@@ -1,23 +1,26 @@
 <?php
 namespace PassBase\Storage;
 
+use PassBase\Entity\Password;
+use PassBase\Entity\PasswordGroup;
+
 interface PasswordStorage
 {
     /**
-     * @param \PassBase\Entity\PasswordGroup $group
+     * @param PasswordGroup $group
      * @param string $encryptedData
      */
     public function addPassword(
-        \PassBase\Entity\PasswordGroup $group,
+        PasswordGroup $group,
         $encryptedData
     );
 
     /**
-     * @param \PassBase\Entity\Password $password
+     * @param Password $password
      * @param string $encryptedData
      */
     public function updatePassword(
-        \PassBase\Entity\Password $password,
+        Password $password,
         $encryptedData
     );
 }

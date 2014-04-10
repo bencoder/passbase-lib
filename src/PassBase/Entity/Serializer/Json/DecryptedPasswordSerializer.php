@@ -1,12 +1,15 @@
 <?php
 namespace PassBase\Entity\Serializer\Json;
 
-class DecryptedPasswordSerializer implements \PassBase\Entity\Serializer\DecryptedPasswordSerializer
+use PassBase\Entity\DecryptedPassword;
+use PassBase\Entity\Serializer\DecryptedPasswordSerializer as DecryptedPasswordSerializerInterface;
+
+class DecryptedPasswordSerializer implements DecryptedPasswordSerializerInterface
 {
     /**
      * {@inherit}
      */
-    public function serializePassword(\PassBase\Entity\DecryptedPassword $password)
+    public function serializePassword(DecryptedPassword $password)
     {
         $data = array(
             "url" => $password->getUrl(),
@@ -24,7 +27,7 @@ class DecryptedPasswordSerializer implements \PassBase\Entity\Serializer\Decrypt
     public function deserializePassword($data)
     {
         $data = json_decode($data,true);
-        return new \PassBase\Entity\DecryptedPassword(
+        return new DecryptedPassword(
             $data["url"],
             $data["username"],
             $data["password"],
